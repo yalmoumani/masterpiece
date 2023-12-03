@@ -126,7 +126,7 @@ class CartOperations {
         for testing:
         {
             "action": "getCart",
-            "user_id": 1
+            "user_id": {insert id#}
         }
         */
         global $con;

@@ -10,6 +10,8 @@ class CategoryOperations {
     // API Testing: http://localhost\masterpiece\API\admin\categoryCRUD.php
     public function create() {
         /*
+        purpose: creates new category
+        method: POST
         for testing:
         {
             "action": "create",
@@ -39,6 +41,8 @@ class CategoryOperations {
 
     public function delete() {
         /*
+        purpose: Deletes a category
+        method: DELETE
         for testing:
         {
             "action": "delete",

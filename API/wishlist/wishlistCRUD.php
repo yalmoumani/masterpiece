@@ -6,6 +6,7 @@ header("Content-Type: application/json");
 
 // Contains the necessary includes and database connection
 include '../connection.php';
+    // API Testing: http://localhost\masterpiece\API\wishlist\wishlistCRUD.php
 
 class Wishlist
 {
@@ -63,6 +64,7 @@ class Wishlist
             echo json_encode(['success' => true, 'wishlist' => []]);
         }
     }
+// function to clear the wishlist 
 
     public function emptyWishlist()
     {

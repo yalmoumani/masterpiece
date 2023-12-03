@@ -1,13 +1,11 @@
 <?php
-
-
-
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
 include('../connection.php');
+    // API Testing: http://localhost\masterpiece\API\users\userCRUD.php
 
 class userSettings {
     private $con;
@@ -20,7 +18,6 @@ class userSettings {
         $requestData = json_decode(file_get_contents('php://input'), true);
         $id = $requestData['id'];
         
-        // Logic to retrieve user profile based on the provided ID
         $query = "SELECT * FROM users WHERE id = :id";
         $stmt = $this->con->prepare($query);
         $stmt->bindParam(':id', $id);

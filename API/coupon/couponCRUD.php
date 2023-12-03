@@ -17,9 +17,7 @@ class Coupons
 
     public function editCoupon($couponId, $couponData)
     {
-        // Logic for editing a coupon
-        // Use $this->con to access the database connection
-        // Example:
+    
         $query = "UPDATE coupons SET coupon_data = :data WHERE coupon_id = :id";
         $stmt = $this->con->prepare($query);
         $stmt->bindParam(':data', $couponData);

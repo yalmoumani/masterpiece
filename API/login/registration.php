@@ -4,81 +4,76 @@ header("Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
-class Database {
-    private $servername = "localhost";
-    private $username = "root";
-    private $password = "";
-    private $dbname = "project-4";
-    private $conn;
-
-    public function __construct() {
-        $this->connect();
-    }
-
-    private function connect() {
-        $this->conn = new mysqli($this->servername, $this->username, $this->password, $this->dbname);
-        if ($this->conn->connect_error) {
-            die("Connection failed: " . $this->conn->connect_error);
-        }
-    }
-
-    public function insertUser($username, $email, $password) {
-        $insert_query = "INSERT INTO users (username, email, password) VALUES (?, ?, ?)";
-        $stmt = $this->conn->prepare($insert_query);
-        // $stmt->bind_param($username, $email, $password);
-        $stmt->execute([$username, $email, $password]);
-        if ($stmt) {
-            return true;
-        } else {
-            return $stmt->error;
-        }
-    }
-
-    public function close() {
-        $this->conn->close();
-    }
-}
-
+include ('../connection.php');
+// API: http://localhost/masterpiece/API/login/registration.php
 class UserRegistration {
-    private $db;
+    /*
+    for testing:
+ "password": ""
+  "username": "",
+  "email": "",
+  "mobile": "",
+  "dob": "",
+  "userImg": ""
 
-    public function __construct(Database $db) {
-        $this->db = $db;
+
+    */
+    private $con;
+
+    public function __construct($con) {
+        $this->con = $con;
     }
-   
+
     public function register() {
         if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $data = json_decode(file_get_contents('php://input'), true);
 
-            if ($data && isset($data["username"]) && isset($data["email"]) && isset($data["password"])) {
+            if (isset($data["password"]) && isset($data["username"]) && isset($data["email"]) && isset($data["mobile"]) && isset($data["dob"])) {
                 $username = $data["username"];
+                $userImg = $data["userImg"];
+                $mobile = $data["mobile"];
+                $dob = $data["dob"];
                 $email = $data["email"];
                 $password = $data["password"];
-
-                $result = $this->db->insertUser($username, $email, $password);
-
-                if ($result === true) {
+                if (!empty($userImg)) {
+                    $imageData = base64_decode($userImg);
+                    $filename = uniqid() . '.jpg';
+                    $path = __DIR__ . '/../images/' . $filename;
+                
+                    if (file_put_contents($path, $imageData) === false) {
+                        $response = array('error' => "Error: Failed to save the image.");
+                        http_response_code(400);
+                        echo json_encode($response);
+                        return;
+                    }
+                } else {
+                    $path = __DIR__ . '/../images/default.jpg';
+                }                
+               
+                $filename = !empty($filename) ? $filename : 'default.jpg';
+                $sql = "INSERT INTO users (username, email, password, userImg, mobile, dob) VALUES ('$username', '$email', '$password', '$filename', '$mobile', '$dob')";
+                if ($this->con->query($sql) === true) {
                     $response = array('success' => true);
+                    http_response_code(200);
                     echo json_encode($response);
                 } else {
-                    $response = array('error' => "Error: " . $result);
+                    $response = array('error' => "Error: " . $this->con->error);
+                    http_response_code(400);
                     echo json_encode($response);
                 }
             } else {
                 $response = array('error' => "Invalid JSON data.");
+                http_response_code(400);
                 echo json_encode($response);
             }
-        }else{
-          
-            echo "REQUEST_METHOD is not correct plece use post";
+        } else {
+            http_response_code(405);
+            echo "REQUEST_METHOD is not correct, please use POST.";
         }
     }
-
-    
 }
 
-$db = new Database();
-$userRegistration = new UserRegistration($db);
+$userRegistration = new UserRegistration($con);
 $userRegistration->register();
-$db->close();
+$con->close();
 ?>

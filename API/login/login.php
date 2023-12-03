@@ -1,16 +1,13 @@
-<?php
-header("Content-Type: application/json");
-if ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
-    header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Headers: Content-Type");
-    header("Access-Control-Allow-Methods: POST");
-    exit;
-}
 
+<?php 
+header("Content-Type: application/json");
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Content-Type");
+header("Access-Control-Allow-Methods: POST");
 
 include "../connection.php";
-
-class UserAuthentication {
+http://localhost\masterpiece\API\login\login.php
+class Login {
     private $con;
 
     public function __construct($db) {
@@ -20,29 +17,28 @@ class UserAuthentication {
     public function authenticateUser($json_data) {
         $data = json_decode($json_data, true);
 
-        if ($data && isset($data["username"]) && isset($data["password"])) {
-            $username = $data["username"];
+        if ($data && isset($data["email"]) && isset($data["password"])) {
+            $email = $data["email"];
             $password = $data["password"];
 
-            $query = "SELECT id, role_id FROM users WHERE (username = ? OR email = ?) AND password = ?";
+            $query = "SELECT id, roleId FROM users WHERE email = ? AND password = ?";
             $stmt = $this->con->prepare($query);
-            $stmt->bind_param('sss', $username, $username, $password); 
+            $stmt->bind_param('ss', $email, $password);
             $stmt->execute();
             $stmt->store_result();
-            
-            // Define variables to store results
+
             $id = null;
-            $role_id = null;
+            $roleId = null;
 
             if ($stmt->num_rows > 0) {
-                $stmt->bind_result($id, $role_id);  // Bind result variables
+                $stmt->bind_result($id, $roleId);
                 $stmt->fetch();
 
                 session_start();
-                $response = array('STATUS' => true, 'role' => $role_id, 'user_id' => $id);
-                $_SESSION['userId'] = $id;
+                $response = array('verified' => true, 'roleId' => $roleId, 'id' => $id);
+                $_SESSION['id'] = $id;
             } else {
-                $response = array('STATUS' => false);
+                $response = array('verified' => false);
             }
 
             $stmt->close();
@@ -56,7 +52,7 @@ class UserAuthentication {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $json_data = file_get_contents('php://input');
-    $authenticator = new UserAuthentication($con);
+    $authenticator = new Login($con);
     $response = $authenticator->authenticateUser($json_data);
 } else {
     $response = array('error' => 'Invalid request method');
