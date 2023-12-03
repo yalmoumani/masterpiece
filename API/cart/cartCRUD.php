@@ -42,7 +42,6 @@ class CartOperations {
                     echo json_encode(array("error" => "Error: " . $con->error));
                 }
             } else {
-                // Insert a new item into the cart
                 $insertQuery = "INSERT INTO cart (user_id, product_id, quantity) VALUES ($userId, $productId, $quantity)";
 
                 if ($con->query($insertQuery) === TRUE) {
