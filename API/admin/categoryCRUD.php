@@ -4,8 +4,10 @@ header("Access-Control-Allow-Methods: PUT, GET, POST, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 include '../connection.php';
+include '../authorization.php';
 
 class CategoryOperations {
+    // This file contains all the functions needed to get, edit, create, delete for categories and for sections.
 
     // API Testing: http://localhost\masterpiece\API\admin\categoryCRUD.php
     public function create() {
@@ -75,6 +77,8 @@ class CategoryOperations {
 
     public function edit() {
         /*
+        purpose: To edit a category.
+        method: POST
         for testing:
         {
             "action": "edit",
@@ -117,6 +121,8 @@ class CategoryOperations {
 
     public function getCategory($id) {
         /*
+         purpose: Retrieves one category
+         method: POST
         for testing:
         {
             "action": "getCategory",
@@ -144,11 +150,12 @@ class CategoryOperations {
 
     public function getAll() {
         /*
+        purpose: To retrieve all categories
+        method: POST
         for testing:
         {
-{
-    "action": "getAll"
-}
+             "action": "getAll"
+        }
 */
         global $con;
 
@@ -171,10 +178,11 @@ class CategoryOperations {
 
     public function getSections($id) {
             /*
+        purpose: retrieves sections for a certain category
+        method: POST
         for testing:
-        {
 {
-    "action": "getSections"
+    "action": "getSections",
     "id":{inserts id#}
 }
 */
@@ -201,6 +209,16 @@ class CategoryOperations {
     }
 
     public function createSection() {
+                 /*
+        purpose: creates a section in relation to the category selected
+        method: POST
+        for testing:
+{
+    "action": "createSection",
+    "category":{insert id#}
+    "section":{insert text}
+}
+*/
         global $con;
     
         $data = json_decode(file_get_contents('php://input'), true);

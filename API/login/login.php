@@ -37,6 +37,7 @@ class Login {
                 session_start();
                 $response = array('verified' => true, 'roleId' => $roleId, 'id' => $id);
                 $_SESSION['id'] = $id;
+                $_SESSION['roleId']= $roleId;
             } else {
                 $response = array('verified' => false);
             }

@@ -12,10 +12,11 @@ class CartOperations {
     public function addItem() {
         /*
         for testing:
+            purpose: to allow a user to add items to cart
+            method: POST
         {
             "action": "addItem",
-            "user_id": {insert id#},
-            "product_id": {insert id#},
+            "productId": {insert id#},
             "quantity": {insert #}
         }
         */
@@ -23,18 +24,22 @@ class CartOperations {
 
         $data = json_decode(file_get_contents('php://input'), true);
 
-        $userId = $data['user_id'] ?? '';
-        $productId = $data['product_id'] ?? '';
+        session_start();
+        if (!isset($_SESSION['id'])) {
+            echo json_encode(array("error" => "Please login to continue."));
+            return;
+        }
+
+        $userId = $_SESSION['id'];
+        $productId = $data['productId'] ?? '';
         $quantity = $data['quantity'] ?? 1;
 
         if (!empty($userId) && !empty($productId)) {
-            // Check if the item already exists in the cart
-            $checkQuery = "SELECT * FROM cart WHERE user_id = $userId AND product_id = $productId";
+            $checkQuery = "SELECT * FROM cart WHERE userId = $userId AND productId = $productId";
             $checkResult = $con->query($checkQuery);
 
             if ($checkResult->num_rows > 0) {
-                // Update the quantity of the existing item in the cart
-                $updateQuery = "UPDATE cart SET quantity = quantity + $quantity WHERE user_id = $userId AND product_id = $productId";
+                $updateQuery = "UPDATE cart SET quantity = quantity + $quantity WHERE userId = $userId AND productId = $productId";
 
                 if ($con->query($updateQuery) === TRUE) {
                     echo json_encode(array("message" => "Item quantity updated in the cart."));
@@ -42,7 +47,7 @@ class CartOperations {
                     echo json_encode(array("error" => "Error: " . $con->error));
                 }
             } else {
-                $insertQuery = "INSERT INTO cart (user_id, product_id, quantity) VALUES ($userId, $productId, $quantity)";
+                $insertQuery = "INSERT INTO cart (userId, productId, quantity) VALUES ($userId, $productId, $quantity)";
 
                 if ($con->query($insertQuery) === TRUE) {
                     echo json_encode(array("message" => "Item added to the cart."));
@@ -51,7 +56,7 @@ class CartOperations {
                 }
             }
         } else {
-            echo json_encode(array("error" => "Please provide the user ID and product ID."));
+            echo json_encode(array("error" => "Please provide the product ID."));
         }
 
         $con->close();
@@ -59,24 +64,31 @@ class CartOperations {
 
     public function updateItem() {
         /*
+        purpose: to update an item from the cart
+        method: POST
         for testing:
         {
             "action": "updateItem",
-            "user_id": {insert id#}
-            "product_id": {insert id#}
-            "quantity":{insert i#}
+            "productId": {insert id#},
+            "quantity":{insert id#}
         }
         */
         global $con;
 
         $data = json_decode(file_get_contents('php://input'), true);
 
-        $userId = $data['user_id'] ?? '';
-        $productId = $data['product_id'] ?? '';
+        session_start();
+        if (!isset($_SESSION['id'])) {
+            echo json_encode(array("error" => "Please login to continue."));
+            return;
+        }
+
+        $userId = $_SESSION['id'];
+        $productId = $data['productId'] ?? '';
         $quantity = $data['quantity'] ?? 1;
 
         if (!empty($userId) && !empty($productId)) {
-            $updateQuery = "UPDATE cart SET quantity = $quantity WHERE user_id = $userId AND product_id = $productId";
+            $updateQuery = "UPDATE cart SET quantity = $quantity WHERE userId = $userId AND productId = $productId";
 
             if ($con->query($updateQuery) === TRUE) {
                 echo json_encode(array("message" => "Item quantity updated in the cart."));
@@ -84,7 +96,7 @@ class CartOperations {
                 echo json_encode(array("error" => "Error: " . $con->error));
             }
         } else {
-            echo json_encode(array("error" => "Please provide the user ID and product ID."));
+            echo json_encode(array("error" => "Please provide the product ID."));
         }
 
         $con->close();
@@ -92,22 +104,29 @@ class CartOperations {
 
     public function removeItem() {
         /*
+        purpose: remove item from cart
+        method: POST
         for testing:
         {
             "action": "removeItem",
-            "user_id": 1,
-            "product_id": 1
+            "productId": {insert id#}
         }
         */
         global $con;
 
         $data = json_decode(file_get_contents('php://input'), true);
 
-        $userId = $data['user_id'] ?? '';
-        $productId = $data['product_id'] ?? '';
+        session_start();
+        if (!isset($_SESSION['id'])) {
+            echo json_encode(array("error" => "Please login to continue."));
+            return;
+        }
+
+        $userId = $_SESSION['id'];
+        $productId = $data['productId'] ?? '';
 
         if (!empty($userId) && !empty($productId)) {
-            $deleteQuery = "DELETE FROM cart WHERE user_id = $userId AND product_id = $productId";
+            $deleteQuery = "DELETE FROM cart WHERE userId = $userId AND productId = $productId";
 
             if ($con->query($deleteQuery) === TRUE) {
                 echo json_encode(array("message" => "Item removed from the cart."));
@@ -115,28 +134,41 @@ class CartOperations {
                 echo json_encode(array("error" => "Error: " . $con->error));
             }
         } else {
-            echo json_encode(array("error" => "Please provide the user ID and product ID."));
+            echo json_encode(array("error" => "Please provide the product ID."));
         }
 
         $con->close();
     }
 
+    public function getCart() {
+        /*
+        purpose: to retrieve a persons cart
+        method: POST
+        for testing:
+        {
+
     public function getCart($userId) {
         /*
         for testing:
         {
-            "action": "getCart",
-            "user_id": {insert id#}
+            "action": "getCart"
         }
         */
         global $con;
+        session_start();
+        if (!isset($_SESSION['id'])) {
+            echo json_encode(array("error" => "Please login to continue."));
+            return;
+        }
+
+        $userId = $_SESSION['id'];
 
         if (!empty($userId)) {
     
-            $sql = "SELECT cart.id, products.product_name, cart.quantity, products.price 
+            $sql = "SELECT cart.id, products.name, cart.quantity, products.price 
                     FROM cart 
-                    INNER JOIN products ON cart.product_id = products.id 
-                    WHERE cart.user_id = $userId";
+                    INNER JOIN products ON cart.productId = products.id 
+                    WHERE cart.userId = $userId";
 
             $result = $con->query($sql);
 
@@ -157,18 +189,26 @@ class CartOperations {
     }
 
 
-    public function clearCart($userId) {
+    public function clearCart() {
         /*
         for testing:
+            purpose: to clear all items from cart
+            method: POST
         {
-            "action": "clearCart",
-            "user_id": {insert id#}
+            "action": "clearCart"
         }
         */
         global $con;
+        session_start();
+        if (!isset($_SESSION['id'])) {
+            echo json_encode(array("error" => "Please login to continue."));
+            return;
+        }
+
+        $userId = $_SESSION['id'];
 
         if (!empty($userId)) {
-            $deleteQuery = "DELETE FROM cart WHERE user_id = $userId";
+            $deleteQuery = "DELETE FROM cart WHERE userId = $userId";
 
             if ($con->query($deleteQuery) === TRUE) {
                 echo json_encode(array("message" => "Cart cleared successfully."));
@@ -182,18 +222,26 @@ class CartOperations {
         $con->close();
     }
 
-    public function checkout($userId) {
+    public function checkout() {
         /*
+        purpose: to move items out of cart into orders
+        action: post
         for testing:
         {
-            "action": "checkout",
-            "user_id": {insert id#}
+            "action": "checkout"
         }
         */
         global $con;
+        session_start();
+        if (!isset($_SESSION['id'])) {
+            echo json_encode(array("error" => "Please login to continue."));
+            return;
+        }
+
+        $userId = $_SESSION['id'];
 
         if (!empty($userId)) {
-            $cartQuery = "SELECT * FROM cart WHERE user_id = $userId";
+            $cartQuery = "SELECT * FROM cart WHERE userId = $userId";
             $cartResult = $con->query($cartQuery);
 
             if ($cartResult->num_rows > 0) {
@@ -201,7 +249,7 @@ class CartOperations {
 
                 try {
                     while ($cartItem = $cartResult->fetch_assoc()) {
-                        $productId = $cartItem['product_id'];
+                        $productId = $cartItem['productId'];
                         $quantity = $cartItem['quantity'];
 
                         $productQuery = "SELECT * FROM products WHERE id = $productId";
@@ -213,7 +261,7 @@ class CartOperations {
 
                             $totalPrice = $price * $quantity;
 
-                            $insertQuery = "INSERT INTO orders (user_id, product_id, quantity, total) 
+                            $insertQuery = "INSERT INTO orders (userId, productId, quantity, total) 
                                             VALUES ($userId, $productId, $quantity, $totalPrice)";
 
                             if (!$con->query($insertQuery)) {
@@ -224,7 +272,7 @@ class CartOperations {
                         }
                     }
 
-                    $deleteQuery = "DELETE FROM cart WHERE user_id = $userId";
+                    $deleteQuery = "DELETE FROM cart WHERE userId = $userId";
                     if (!$con->query($deleteQuery)) {
                         throw new Exception("Error deleting cart items: " . $con->error);
                     }
@@ -268,14 +316,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'removeItem') {
         $operation->removeItem();
     } elseif ($action === 'getCart') {
-        $userId = $data['user_id'] ?? '';
-        $operation->getCart($userId);
+        $operation->getCart();
     } elseif ($action === 'clearCart') {
-        $userId = $data['user_id'] ?? '';
-        $operation->clearCart($userId);
+        $operation->clearCart();
     } elseif ($action === 'checkout') {
-        $userId = $data['user_id'] ?? '';
-        $operation->checkout($userId);
+        $operation->checkout();
     } else {
         echo json_encode(array("error" => "Invalid action."));
     }

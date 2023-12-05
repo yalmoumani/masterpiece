@@ -5,12 +5,15 @@ header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 // Contains the admins functions to create, edit, delete, get user by id, get all users
 include '../connection.php';
+include '../authorization.php';
 
 class UserOperations {
 
     // API Testing: http://localhost\masterpiece\API\admin\userCRUD.php
     public function create() {
         /*
+        purpose: to create a new user from admin
+        method: POST
         for testing:
             {
     "action": "create",
@@ -28,7 +31,7 @@ class UserOperations {
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (!empty($data)) {
-            $requiredFields = ['userImg', 'email', 'username', 'mobile', 'dob'];
+            $requiredFields = [ 'email', 'username', 'mobile', 'dob'];
             $allFieldsPresent = true;
 
             foreach ($requiredFields as $field) {
@@ -39,7 +42,7 @@ class UserOperations {
             }
 
             if ($allFieldsPresent) {
-                $image = $data['userImg'];
+                $image = ('API/images/default.jpg');
                 $username = $data['username'];
                 $email = $data['email'];
                 $mobile = $data['mobile'];
@@ -74,6 +77,8 @@ class UserOperations {
 
     public function delete() {
               /*
+              purpose: to delete a user from admin
+              mehtod: POST
         for testing:
             {
     "action": "delete",
@@ -109,6 +114,8 @@ class UserOperations {
         
         global $con;
           /*
+          purpose: to edit a user from admin
+          method: POST
         for testing:
             {
     "action": "edit",
@@ -184,6 +191,8 @@ class UserOperations {
 
     public function getUser($id) {
            /*
+           purpose: to allow admin to show details of one user
+           method: POST
         for testing:
             {
     "action": "getUser",
@@ -211,6 +220,8 @@ class UserOperations {
     }
         public function getAll() {
                /*
+               purpose: to allow admin to show details of all users
+           method: POST
         for testing:
             {
     "action": "getAll",
@@ -218,7 +229,6 @@ class UserOperations {
             }
         */
             global $con;
-    
             $sql = "SELECT id, username, email, mobile, dob, userImg, created_at, updated_at FROM users";
             $result = $con->query($sql);
     
@@ -236,6 +246,34 @@ class UserOperations {
         }
     
     }
+    
+//         public function searchUsers() {
+//                /*
+//         for testing:
+//             {
+//     "action": "getAll",
+// }
+//             }
+//         */
+//             global $con;
+    
+//             $sql = "SELECT id, username, email, mobile, dob, userImg, created_at, updated_at FROM users";
+//             $result = $con->query($sql);
+    
+//             if ($result->num_rows > 0) {
+//                 $users = array();
+//                 while ($row = $result->fetch_assoc()) {
+//                     $users[] = $row;
+//                 }
+//                 echo json_encode($users);
+//             } else {
+//                 echo json_encode(array("error" => "No users found."));
+//             }
+    
+//             $con->close();
+//         }
+    
+//     }
     
     $userOps = new UserOperations();
     
