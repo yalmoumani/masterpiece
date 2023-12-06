@@ -213,6 +213,43 @@ class ProductOperations {
 
         $con->close();
     }
+public function searchProducts($searchTerm) {
+    /*
+    purpose: to search for products by name, price, id, category, section, or description
+    method: POST
+    for testing:
+        {
+            "action": "searchProducts",
+            "searchTerm": "{insert search term}"
+        }
+    */
+    global $con;
+
+    if (!empty($searchTerm)) {
+        $sql = "SELECT * FROM products WHERE 
+                name LIKE '%$searchTerm%' OR
+                price LIKE '%$searchTerm%' OR
+                id LIKE '%$searchTerm%' OR
+                categoryId LIKE '%$searchTerm%' OR
+                sectionId LIKE '%$searchTerm%' OR
+                description LIKE '%$searchTerm%'";
+        $result = $con->query($sql);
+
+        if ($result->num_rows > 0) {
+            $products = array();
+            while ($row = $result->fetch_assoc()) {
+                $products[] = $row;
+            }
+            echo json_encode($products);
+        } else {
+            echo json_encode(array("error" => "No products found."));
+        }
+    } else {
+        echo json_encode(array("error" => "Please provide a search term."));
+    }
+
+    $con->close();
+}
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
@@ -235,6 +272,13 @@ switch ($action) {
         break;
     case 'getAll':
         $productOperations->getAll();
+        break;
+    case 'searchProducts':
+        if (isset($data['searchTerm'])) {
+            $productOperations->searchProducts($data['searchTerm']);
+        } else {
+            echo json_encode(array("error" => "No search term provided."));
+        }
         break;
     default:
         echo json_encode(array("error" => "Invalid action specified."));

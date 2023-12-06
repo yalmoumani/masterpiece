@@ -247,6 +247,52 @@ class CategoryOperations {
     
         $con->close();
     }
+    public function search($query) {
+        /*
+        purpose: Search for categories and sections based on ID, name, or the product in it
+        method: POST
+        for testing:
+        {
+            "action": "search",
+            "query": "insert search query"
+        }
+        */
+        global $con;
+
+        if (!empty($query)) {
+            // Search for categories
+            $categorySql = "SELECT id, category FROM categories WHERE id = $query OR category LIKE '%$query%'";
+            $categoryResult = $con->query($categorySql);
+
+            // Search for sections
+            $sectionSql = "SELECT categoryId, sectionId FROM category_section WHERE categoryId = $query OR sectionId = $query";
+            $sectionResult = $con->query($sectionSql);
+
+            $response = array();
+
+            if ($categoryResult->num_rows > 0) {
+                while ($row = $categoryResult->fetch_assoc()) {
+                    $response[] = $row;
+                }
+            }
+
+            if ($sectionResult->num_rows > 0) {
+                while ($row = $sectionResult->fetch_assoc()) {
+                    $response[] = $row;
+                }
+            }
+
+            if (!empty($response)) {
+                echo json_encode($response);
+            } else {
+                echo json_encode(array("error" => "No results found."));
+            }
+        } else {
+            echo json_encode(array("error" => "Please provide a search query."));
+        }
+
+        $con->close();
+    }
 }
 
 $operation = new CategoryOperations();

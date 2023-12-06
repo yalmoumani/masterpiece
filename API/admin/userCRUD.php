@@ -244,37 +244,46 @@ class UserOperations {
     
             $con->close();
         }
+
     
+    public function searchUsers($searchTerm) {
+        /*
+        purpose: to search for users by userId, name, mobile, email, or dob
+        method: POST
+        for testing:
+            {
+                "action": "searchUsers",
+                "searchTerm": "{insert search term}"
+            }
+        */
+        global $con;
+    
+        if (!empty($searchTerm)) {
+            $sql = "SELECT id, username, email, mobile, dob, userImg, created_at, updated_at FROM users WHERE 
+                    id LIKE '%$searchTerm%' OR
+                    username LIKE '%$searchTerm%' OR
+                    mobile LIKE '%$searchTerm%' OR
+                    email LIKE '%$searchTerm%' OR
+                    dob LIKE '%$searchTerm%'";
+            $result = $con->query($sql);
+    
+            if ($result->num_rows > 0) {
+                $users = array();
+                while ($row = $result->fetch_assoc()) {
+                    $users[] = $row;
+                }
+                echo json_encode($users);
+            } else {
+                echo json_encode(array("error" => "No users found."));
+            }
+        } else {
+            echo json_encode(array("error" => "Please provide a search term."));
+        }
+    
+        $con->close();
     }
-    
-//         public function searchUsers() {
-//                /*
-//         for testing:
-//             {
-//     "action": "getAll",
-// }
-//             }
-//         */
-//             global $con;
-    
-//             $sql = "SELECT id, username, email, mobile, dob, userImg, created_at, updated_at FROM users";
-//             $result = $con->query($sql);
-    
-//             if ($result->num_rows > 0) {
-//                 $users = array();
-//                 while ($row = $result->fetch_assoc()) {
-//                     $users[] = $row;
-//                 }
-//                 echo json_encode($users);
-//             } else {
-//                 echo json_encode(array("error" => "No users found."));
-//             }
-    
-//             $con->close();
-//         }
-    
-//     }
-    
+}
+
     $userOps = new UserOperations();
     
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -282,7 +291,6 @@ class UserOperations {
     
         if (isset($data['action'])) {
             $action = $data['action'];
-    
             switch ($action) {
                 case 'create':
                     $userOps->create();
@@ -303,14 +311,16 @@ class UserOperations {
                 case 'getAll': 
                     $userOps->getAll();
                     break;
+                case 'searchUsers':
+                    if (isset($data['searchTerm'])) {
+                        $userOps->searchUsers($data['searchTerm']);
+                    } else {
+                        echo json_encode(array("error" => "No search term provided."));
+                    }
+                    break;
                 default:
                     echo json_encode(array("error" => "Invalid action."));
-                    break;
+                }
             }
-        } else {
-            echo json_encode(array("error" => "No action provided."));
-        }
-    } else {
-        echo json_encode(array("error" => "Invalid request method. Please use POST method."));
-    }
+        }  
 ?>

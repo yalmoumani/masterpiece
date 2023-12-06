@@ -32,7 +32,7 @@ class OrderOperations {
                         echo json_encode(array("error" => "Error: " . $con->error));
                     }
                 } else {
-                    echo json_encode(array("error" => "Unable to cancel order. Order status is not 'processing'."));
+                    echo json_encode(array("error" => "Unable to cancel order. Order has already been shipped."));
                 }
             } else {
                 echo json_encode(array("error" => "Order not found."));
@@ -44,7 +44,7 @@ class OrderOperations {
 
     public function viewCurrentOrders($userId) {
         global $con;
-        $sql = "SELECT * FROM orders WHERE user_id = $userId AND status = 'processing' OR status = 'shipped'";
+        $sql = "SELECT * FROM orders WHERE userId = $userId AND status = 'processing' OR status = 'shipped'";
         $result = $con->query($sql);
 
         if ($result->num_rows > 0) {
@@ -60,10 +60,10 @@ class OrderOperations {
 
     public function pastOrders() {
         global $con;
-        $userId = $_POST['user_id'] ?? '';
+        $userId = $_POST['userId'] ?? '';
         
         if (!empty($userId)) {
-            $sql = "SELECT * FROM orders WHERE user_id = $userId AND status = 'closed'";
+            $sql = "SELECT * FROM orders WHERE userId = $userId AND status = 'closed'";
             $result = $con->query($sql);
 
             if ($result->num_rows > 0) {
@@ -92,6 +92,47 @@ class OrderOperations {
             echo json_encode(array("error" => "Order not found."));
         }
     }
+    public function searchOrders($searchTerm) {
+        /*
+        purpose: to search for orders by ID, user ID, status, or any other relevant criteria
+        method: POST
+        for testing:
+            {
+                "action": "searchOrders",
+                "searchTerm": "{insert search term}"
+            }
+        */
+        global $con;
+    
+        if (!empty($searchTerm)) {
+            $sql = "SELECT * FROM orders WHERE 
+                    id LIKE '%$searchTerm%' OR
+                    userId LIKE '%$searchTerm%' OR
+                    status LIKE '%$searchTerm%' OR
+                    /* Add more criteria for search here */
+                    /* Example: date LIKE '%$searchTerm%' OR */
+                    /* Example: totalAmount LIKE '%$searchTerm%' OR */
+                    /* Example: shippingAddress LIKE '%$searchTerm%' OR */
+                    /* ... */
+                    1"; // To ensure at least one condition is always true
+    
+            $result = $con->query($sql);
+    
+            if ($result->num_rows > 0) {
+                $orders = array();
+                while ($row = $result->fetch_assoc()) {
+                    $orders[] = $row;
+                }
+                echo json_encode($orders);
+            } else {
+                echo json_encode(array("error" => "No orders found."));
+            }
+        } else {
+            echo json_encode(array("error" => "Please provide a search term."));
+        }
+    
+        $con->close();
+    }
 }
 
 $action = $_POST['action'] ?? '';
@@ -107,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'cancelOrder') {
         $operation->cancelOrder();
     } elseif ($action === 'viewCurrentOrders') {
-        $userId = $data['user_id'] ?? '';
+        $userId = $data['userId'] ?? '';
         $operation->viewCurrentOrders($userId);
     } elseif ($action === 'pastOrders') {
         $operation->pastOrders();

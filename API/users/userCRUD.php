@@ -59,7 +59,7 @@ class userSettings {
     }
 
     public function viewCurrentOrders($userId) {
-        $sql = "SELECT * FROM orders WHERE user_id = $userId AND (status = 'processing' OR status = 'shipped')";
+        $sql = "SELECT * FROM orders WHERE userId = $userId AND (status = 'processing' OR status = 'shipped')";
         $result = $this->con->query($sql);
 
         if ($result->num_rows > 0) {
@@ -105,7 +105,7 @@ class userSettings {
     }
 
     public function pastOrders($userId) {
-        $sql = "SELECT * FROM orders WHERE user_id = $userId AND status = 'closed'";
+        $sql = "SELECT * FROM orders WHERE userId = $userId AND status = 'closed'";
         $result = $this->con->query($sql);
 
         if ($result->num_rows > 0) {
@@ -132,10 +132,10 @@ if ($requestMethod === 'POST') {
     if ($action === 'cancelOrder') {
         $userSettings->cancelOrder();
     } elseif ($action === 'viewCurrentOrders') {
-        $userId = $requestData['user_id'] ?? '';
+        $userId = $requestData['userId'] ?? '';
         $userSettings->viewCurrentOrders($userId);
     } elseif ($action === 'pastOrders') {
-        $userId = $requestData['user_id'] ?? '';
+        $userId = $requestData['userId'] ?? '';
         $userSettings->pastOrders($userId);
     } elseif ($action === 'profile') {
         $userSettings->profile();
