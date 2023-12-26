@@ -13,12 +13,10 @@ class ProductOperations {
         /*
         for testing:
             {
-                "action": "create",
                 "name": "{insert text}",
                 "description": "{insert text}",
                 "image": "{insert text}",
                 "price": "{insert text}",
-                "categoryId": "{insert text}",
                 "sectionId": "{insert text}"
             }
         */
@@ -27,7 +25,7 @@ class ProductOperations {
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (!empty($data)) {
-            $requiredFields = ['image', 'name', 'description', 'categoryId', 'price', 'sectionId'];
+            $requiredFields = ['image', 'name', 'description', 'price', 'sectionId'];
             $allFieldsPresent = true;
 
             foreach ($requiredFields as $field) {
@@ -42,13 +40,11 @@ class ProductOperations {
                 $name = $data['name'];
                 $description = $data['description'];
                 $price = $data['price'];
-                $categoryId = $data['categoryId'];
                 $sectionId = $data['sectionId'];
-                $sql = "INSERT INTO products (image, name, description, categoryId, price, sectionId, created_at, updated_at) VALUES (
+                $sql = "INSERT INTO products (image, name, description, price, sectionId, created_at, updated_at) VALUES (
                     '$image',
                     '$name',
                     '$description',
-                    '$categoryId',
                     '$price',
                     '$sectionId',
                     NOW(),
@@ -74,13 +70,12 @@ class ProductOperations {
         /*
         for testing:
             {
-                "action": "delete",
                 "id": {insert id#}
             }
         */
         global $con;
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
+        if ($_SERVER['REQUEST_METHOD'] === "DELETE") {
             $data = json_decode(file_get_contents('php://input'), true);
             $id = $data['id'];
 
@@ -96,7 +91,7 @@ class ProductOperations {
                 echo json_encode(array("message" => "No ID provided for deletion."));
             }
         } else {
-            echo json_encode(array("error" => "Invalid request method. Please use POST method."));
+            echo json_encode(array("error" => "Invalid request method. Please use DELETE method."));
         }
 
         $con->close();
@@ -106,23 +101,21 @@ class ProductOperations {
         /*
         for testing:
             {
-                "action": "edit",
                 "id": {insert id#},
                 "image": "{insert text}",
                 "name": "{insert text}",
                 "description": "{insert text}",
                 "price": "{insert text}",
-                "categoryId": "{insert text}",
                 "sectionId": "{insert text}"
             }
         */
         global $con;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
             $data = json_decode(file_get_contents('php://input'), true);
             $id = $data['id'];
 
-            $validFields = ['image', 'name', 'description', 'price', 'categoryId', 'sectionId'];
+            $validFields = ['image', 'name', 'description', 'price', 'sectionId'];
             $setClauses = [];
 
             foreach ($validFields as $field) {
@@ -145,143 +138,71 @@ class ProductOperations {
                 echo json_encode(array("error" => "No valid fields provided for update."));
             }
         } else {
-            echo json_encode(array("error" => "Invalid request method. Please use POST method."));
+            echo json_encode(array("error" =>"Invalid request method. Please use PUT method."));
         }
 
         $con->close();
     }
 
-    public function getProduct() {
-        /*
-        for testing:
-            {
-                "action": "getProduct",
-                "id": {insert id#}
-            }
-        */
+    public function getById($id) {
         global $con;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $data = json_decode(file_get_contents('php://input'), true);
-            $id = $data['id'];
+        $sql = "SELECT * FROM products WHERE id = $id";
+        $result = $con->query($sql);
 
-            if (!empty($id)) {
-                $sql = "SELECT * FROM products WHERE id = $id";
-                $result = $con->query($sql);
-
-                if ($result->num_rows > 0) {
-                    $row = $result->fetch_assoc();
-                    echo json_encode($row);
-                } else {
-                    echo json_encode(array("message" => "No product found with the provided ID."));
-                }
-            } else {
-                echo json_encode(array("message" => "No ID provided for fetching product."));
-            }
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            echo json_encode($row);
         } else {
-            echo json_encode(array("error" => "Invalid request method. Please use POST method."));
+            echo json_encode(array("message" => "Product not found."));
         }
 
         $con->close();
     }
 
     public function getAll() {
-        /*
-        for testing:
-            {
-                "action": "getAll"
-            }
-        */
         global $con;
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $sql = "SELECT * FROM products";
-            $result = $con->query($sql);
+        $sql = "SELECT * FROM products";
+        $result = $con->query($sql);
 
-            if ($result->num_rows > 0) {
-                $rows = array();
-                while ($row = $result->fetch_assoc()) {
-                    $rows[] = $row;
-                }
-                echo json_encode($rows);
-            } else {
-                echo json_encode(array("message" => "No products found."));
+        if ($result->num_rows > 0) {
+            $rows = array();
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
             }
+            echo json_encode($rows);
         } else {
-            echo json_encode(array("error" => "Invalid request method. Please use POST method."));
+            echo json_encode(array("message" => "No products found."));
         }
 
         $con->close();
     }
-public function searchProducts($searchTerm) {
-    /*
-    purpose: to search for products by name, price, id, category, section, or description
-    method: POST
-    for testing:
-        {
-            "action": "searchProducts",
-            "searchTerm": "{insert search term}"
-        }
-    */
-    global $con;
-
-    if (!empty($searchTerm)) {
-        $sql = "SELECT * FROM products WHERE 
-                name LIKE '%$searchTerm%' OR
-                price LIKE '%$searchTerm%' OR
-                id LIKE '%$searchTerm%' OR
-                categoryId LIKE '%$searchTerm%' OR
-                sectionId LIKE '%$searchTerm%' OR
-                description LIKE '%$searchTerm%'";
-        $result = $con->query($sql);
-
-        if ($result->num_rows > 0) {
-            $products = array();
-            while ($row = $result->fetch_assoc()) {
-                $products[] = $row;
-            }
-            echo json_encode($products);
-        } else {
-            echo json_encode(array("error" => "No products found."));
-        }
-    } else {
-        echo json_encode(array("error" => "Please provide a search term."));
-    }
-
-    $con->close();
-}
 }
 
-$data = json_decode(file_get_contents('php://input'), true);
-$action = isset($data['action']) ? $data['action'] : '';
+$method = $_SERVER['REQUEST_METHOD'];
+$product = new ProductOperations();
 
-$productOperations = new ProductOperations();
-
-switch ($action) {
-    case 'create':
-        $productOperations->create();
+switch ($method) {
+    case 'POST':
+        $product->create();
         break;
-    case 'delete':
-        $productOperations->delete();
+    case 'DELETE':
+        $product->delete();
         break;
-    case 'edit':
-        $productOperations->edit();
+    case 'PUT':
+        $product->edit();
         break;
-    case 'getProduct':
-        $productOperations->getProduct();
-        break;
-    case 'getAll':
-        $productOperations->getAll();
-        break;
-    case 'searchProducts':
-        if (isset($data['searchTerm'])) {
-            $productOperations->searchProducts($data['searchTerm']);
+    case 'GET':
+        $id = isset($_GET['id']) ? $_GET['id'] : null;
+        if ($id !== null) {
+            $product->getById($id);
         } else {
-            echo json_encode(array("error" => "No search term provided."));
+            $product->getAll();
         }
         break;
     default:
-        echo json_encode(array("error" => "Invalid action specified."));
+        echo json_encode(array("error" => "Invalid request method."));
         break;
 }
 ?>

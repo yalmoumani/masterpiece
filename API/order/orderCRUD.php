@@ -103,18 +103,15 @@ class OrderOperations {
             }
         */
         global $con;
-    
+        
         if (!empty($searchTerm)) {
             $sql = "SELECT * FROM orders WHERE 
                     id LIKE '%$searchTerm%' OR
                     userId LIKE '%$searchTerm%' OR
                     status LIKE '%$searchTerm%' OR
-                    /* Add more criteria for search here */
-                    /* Example: date LIKE '%$searchTerm%' OR */
-                    /* Example: totalAmount LIKE '%$searchTerm%' OR */
-                    /* Example: shippingAddress LIKE '%$searchTerm%' OR */
-                    /* ... */
-                    1"; // To ensure at least one condition is always true
+                    quantity like '%$searchTerm%' OR
+                    created_at LIKE '%$searchTerm%' OR 
+                     total LIKE '%$searchTerm%'";
     
             $result = $con->query($sql);
     
@@ -155,6 +152,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'getOrder') {
         $orderId = $data['order_id'] ?? '';
         $operation->getOrder($orderId);
+    } elseif ($action === 'searchOrders') {
+        $searchTerm = $data['searchTerm'] ?? '';
+        $operation->searchOrders($searchTerm);
     } else {
         echo json_encode(array("error" => "Invalid action."));
     }

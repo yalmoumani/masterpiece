@@ -9,19 +9,17 @@ include '../authorization.php';
 class CategoryOperations {
     // This file contains all the functions needed to get, edit, create, delete for categories and for sections.
 
-    // API Testing: http://localhost\masterpiece\API\admin\categoryCRUD.php
+    // API Testing: http://localhost/masterpiece/API/admin/categoryCRUD.php
     public function create() {
         /*
         purpose: creates new category
         method: POST
         for testing:
         {
-            "action": "create",
             "category": "insert text"
         }
         */
         global $con;
-
         $data = json_decode(file_get_contents('php://input'), true);
 
         if (!empty($data['category'])) {
@@ -47,29 +45,23 @@ class CategoryOperations {
         method: DELETE
         for testing:
         {
-            "action": "delete",
-            "id": 1
+            "categoryId": 1
         }
         */
         global $con;
+        $data = json_decode(file_get_contents('php://input'), true);
+        $id = $data['categoryId'];
 
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $data = json_decode(file_get_contents('php://input'), true);
-            $id = $data['id'];
+        if (!empty($id)) {
+            $sql = "DELETE FROM categories WHERE id = $id";
 
-            if (!empty($id)) {
-                $sql = "DELETE FROM categories WHERE id = $id";
-
-                if ($con->query($sql) === TRUE) {
-                    echo json_encode(array("message" => "Category deleted successfully."));
-                } else {
-                    echo json_encode(array("error" => "Error: " . $con->error));
-                }
+            if ($con->query($sql) === TRUE) {
+                echo json_encode(array("message" => "Category deleted successfully."));
             } else {
-                echo json_encode(array("error" => "No category ID provided for deletion."));
+                echo json_encode(array("error" => "Error: " . $con->error));
             }
         } else {
-            echo json_encode(array("error" => "Invalid request method. Please use POST method."));
+            echo json_encode(array("error" => "No category ID provided for deletion."));
         }
 
         $con->close();
@@ -78,61 +70,53 @@ class CategoryOperations {
     public function edit() {
         /*
         purpose: To edit a category.
-        method: POST
+        method: PUT
         for testing:
         {
-            "action": "edit",
-            "id": {insert id#},
+            "categoryId": {insert id#},
             "category": "insert text"
         }
         */
         global $con;
+        $json_data = file_get_contents('php://input');
+        $data = json_decode($json_data, true);
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $json_data = file_get_contents('php://input');
-            $data = json_decode($json_data, true);
+        $categoryId = $data['categoryId'];
 
-            $categoryId = $data['id'];
+        $category = $data['category'] ?? '';
 
-            $category = $data['category'] ?? '';
+        $update_category_query = "UPDATE categories SET ";
 
-            $update_category_query = "UPDATE categories SET ";
-
-            if (!empty($category)) {
-                $update_category_query .= "category = '$category'";
-            } else {
-                echo json_encode(array("error" => "Please provide the updated category name."));
-                return;
-            }
-
-            $update_category_query .= " WHERE id = $categoryId";
-
-            if ($con->query($update_category_query) === TRUE) {
-                echo json_encode(array("message" => "Category updated successfully."));
-            } else {
-                echo json_encode(array("error" => "Error: " . $con->error));
-            }
+        if (!empty($category)) {
+            $update_category_query .= "category = '$category'";
         } else {
-            echo json_encode(array("error" => "Invalid request method. Please use POST method."));
+            echo json_encode(array("error" => "Please provide the updated category name."));
+            return;
+        }
+
+        $update_category_query .= " WHERE id = $categoryId";
+
+        if ($con->query($update_category_query) === TRUE) {
+            echo json_encode(array("message" => "Category updated successfully."));
+        } else {
+            echo json_encode(array("error" => "Error: " . $con->error));
         }
 
         $con->close();
     }
 
-    public function getCategory($id) {
+    public function getCategory($categoryId) {
         /*
-         purpose: Retrieves one category
-         method: POST
+        purpose: Retrieves one category
+        method: GET
         for testing:
         {
-            "action": "getCategory",
-            "id": {insert id#}
+            "categoryId": {insert id#}
         }
         */
         global $con;
-
-        if (!empty($id)) {
-            $sql = "SELECT id, category FROM categories WHERE id = $id";
+        if (!empty($categoryId)) {
+            $sql = "SELECT id, category FROM categories WHERE id = $categoryId";
             $result = $con->query($sql);
 
             if ($result->num_rows > 0) {
@@ -151,16 +135,12 @@ class CategoryOperations {
     public function getAll() {
         /*
         purpose: To retrieve all categories
-        method: POST
-        for testing:
-        {
-             "action": "getAll"
-        }
-*/
+        method: GET
+        */
         global $con;
 
         $sql = "SELECT id, category FROM categories";
-        
+
         $result = $con->query($sql);
 
         if ($result->num_rows > 0) {
@@ -175,156 +155,24 @@ class CategoryOperations {
 
         $con->close();
     }
-
-    public function getSections($id) {
-            /*
-        purpose: retrieves sections for a certain category
-        method: POST
-        for testing:
-{
-    "action": "getSections",
-    "id":{inserts id#}
-}
-*/
-        global $con;
-
-        if (!empty($id)) {
-            $sql = "SELECT categoryId, sectionId FROM category_section WHERE categoryId = $id";
-            $result = $con->query($sql);
-
-            if ($result->num_rows > 0) {
-                $sections = array();
-                while ($row = $result->fetch_assoc()) {
-                    $sections[] = $row;
-                }
-                echo json_encode($sections);
-            } else {
-                echo json_encode(array("error" => "No sections found for the category."));
-            }
-        } else {
-            echo json_encode(array("error" => "No category ID provided."));
-        }
-
-        $con->close();
-    }
-
-    public function createSection() {
-                 /*
-        purpose: creates a section in relation to the category selected
-        method: POST
-        for testing:
-{
-    "action": "createSection",
-    "category":{insert id#}
-    "section":{insert text}
-}
-*/
-        global $con;
-    
-        $data = json_decode(file_get_contents('php://input'), true);
-    
-        if (!empty($data['category']) && !empty($data['section'])) {
-            $category = $data['category'];
-            $section = $data['section'];
-    
-            $sectionSql = "INSERT INTO sections (name) VALUES ('$section')";
-            if ($con->query($sectionSql) === TRUE) {
-
-                $sectionId = $con->insert_id;
-    
-                $categorySectionSql = "INSERT INTO category_section (categoryId, sectionId) VALUES ('$category', '$sectionId')";
-                if ($con->query($categorySectionSql) === TRUE) {
-                    echo json_encode(array("message" => "Section created and associated with the category successfully."));
-                } else {
-                    echo json_encode(array("error" => "Error: " . $con->error));
-                }
-            } else {
-                echo json_encode(array("error" => "Error: " . $con->error));
-            }
-        } else {
-            echo json_encode(array("error" => "Please provide the category and section names."));
-        }
-    
-        $con->close();
-    }
-    public function search($query) {
-        /*
-        purpose: Search for categories and sections based on ID, name, or the product in it
-        method: POST
-        for testing:
-        {
-            "action": "search",
-            "query": "insert search query"
-        }
-        */
-        global $con;
-
-        if (!empty($query)) {
-            // Search for categories
-            $categorySql = "SELECT id, category FROM categories WHERE id = $query OR category LIKE '%$query%'";
-            $categoryResult = $con->query($categorySql);
-
-            // Search for sections
-            $sectionSql = "SELECT categoryId, sectionId FROM category_section WHERE categoryId = $query OR sectionId = $query";
-            $sectionResult = $con->query($sectionSql);
-
-            $response = array();
-
-            if ($categoryResult->num_rows > 0) {
-                while ($row = $categoryResult->fetch_assoc()) {
-                    $response[] = $row;
-                }
-            }
-
-            if ($sectionResult->num_rows > 0) {
-                while ($row = $sectionResult->fetch_assoc()) {
-                    $response[] = $row;
-                }
-            }
-
-            if (!empty($response)) {
-                echo json_encode($response);
-            } else {
-                echo json_encode(array("error" => "No results found."));
-            }
-        } else {
-            echo json_encode(array("error" => "Please provide a search query."));
-        }
-
-        $con->close();
-    }
 }
 
 $operation = new CategoryOperations();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $json_data = file_get_contents('php://input');
-    $data = json_decode($json_data, true);
-
-    $action = $data['action'] ?? '';
-
-    if ($action === 'create') {
-        $operation->create();
-    } elseif ($action === 'delete') {
-        $operation->delete();
-    } elseif ($action === 'edit') {
-        $operation->edit();
-    } elseif ($action === 'getCategory') {
-        $id = $data['id'] ?? '';
-        $operation->getCategory($id);
-    } elseif ($action === 'getSections') {
-        $id = $data['id'] ?? '';
-        $operation->getSections($id); 
-    } elseif ($action === 'getAll') {
-        $operation->getAll();
-    } elseif ($action === 'createSection') {
-        $operation->createSection(); 
+    $operation->create();
+} elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    $operation->delete();
+} elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+    $operation->edit();
+} elseif ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $categoryId = $_GET['categoryId'] ?? '';
+    if (!empty($categoryId)) {
+        $operation->getCategory($categoryId);
     } else {
-        echo json_encode(array("error" => "Invalid action."));
+        $operation->getAll();
     }
 } else {
-    echo json_encode(array("error" => "Invalid request method. Please use POST method."));
+    echo json_encode(array("error" => "Invalid request method."));
 }
-
-
 ?>

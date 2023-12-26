@@ -6,321 +6,266 @@ header("Content-Type: application/json");
 // Contains the admins functions to create, edit, delete, get user by id, get all users
 include '../connection.php';
 include '../authorization.php';
-
-class UserOperations {
-
-    // API Testing: http://localhost\masterpiece\API\admin\userCRUD.php
-    public function create() {
-        /*
-        purpose: to create a new user from admin
-        method: POST
-        for testing:
-            {
-    "action": "create",
-    "userImg": "{insert text}",
-    "username": "{insert text}",
-    "email": "{insert text}",
-    "role": "{insert text}",
-    "mobile": "{insert text}",
-    "dob": "{insert text}"
-}
-            }
-        */
-        global $con;
-
-        $data = json_decode(file_get_contents('php://input'), true);
-
-        if (!empty($data)) {
-            $requiredFields = [ 'email', 'username', 'mobile', 'dob'];
-            $allFieldsPresent = true;
-
-            foreach ($requiredFields as $field) {
-                if (!isset($data[$field]) || empty($data[$field])) {
-                    $allFieldsPresent = false;
-                    break;
-                }
-            }
-
-            if ($allFieldsPresent) {
-                $image = ('API/images/default.jpg');
-                $username = $data['username'];
-                $email = $data['email'];
-                $mobile = $data['mobile'];
-                $role = $data['role'];
-                $dob = $data['dob'];
-                $sql = "INSERT INTO users (userImg, username, password, roleId, mobile, email, created_at, updated_at, dob) VALUES (
-                    '$image', 
-                    '$username',
-                    'venus@123',
-                    '$role',
-                    '$mobile',
-                    '$email',
-                    NOW(),
-                    NOW(),
-                    '$dob'
-                )";
-
-                if ($con->query($sql) === TRUE) {
-                    echo json_encode(array("message" => "User record created successfully."));
-                } else {
-                    echo json_encode(array("error" => "Error: " . $con->error));
-                }
-            } else {
-                echo json_encode(array("error" => "Please provide all required fields."));
-            }
-        } else {
-            echo json_encode(array("error" => "No data received."));
-        }
-
-        $con->close();
-    }
-
-    public function delete() {
-              /*
-              purpose: to delete a user from admin
-              mehtod: POST
-        for testing:
-            {
-    "action": "delete",
-    "id": {insert id#},
-}
-            }
-        */
-        global $con;
-
-        if ($_SERVER['REQUEST_METHOD'] === "POST") {
-            $data = json_decode(file_get_contents('php://input'), true);
-            $id = $data['id'];
-
-            if (!empty($id)) {
-                $sql = "DELETE FROM users WHERE id = $id";
-
-                if ($con->query($sql) === TRUE) {
-                    echo json_encode(array("message" => "User record deleted successfully."));
-                } else {
-                    echo json_encode(array("error" => "Error: " . $con->error));
-                }
-            } else {
-                echo json_encode(array("message" => "No ID provided for deletion."));
-            }
-        } else {
-            echo json_encode(array("error" => "Invalid request method. Please use POST method."));
-        }
-
-        $con->close();
-    }
-
-    public function edit() {
-        
-        global $con;
-          /*
-          purpose: to edit a user from admin
-          method: POST
-        for testing:
-            {
-    "action": "edit",
-    "id": {insert id#},
-    "userImg": "{insert text}",
-    "username": "{insert text}",
-    "email": "{insert text}",
-    "role": "{insert text}",
-    "mobile": "{insert text}",
-    "dob": "{insert text}"
-}
-            }
-        */
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $json_data = file_get_contents('php://input');
-            $data = json_decode($json_data, true);
-
-            $userId = $data['id'];
-
-            $image = $data['image'] ?? '';
-            $username = $data['username'] ?? '';
-            $email = $data['email'] ?? '';
-            $dob = $data['dob'] ?? '';
-            $role = $data['role'] ?? '';
-            $mobile = $data['mobile'] ?? '';
-          
-
-            $update_profile_query = "UPDATE users SET ";
-            $setClauses = [];
-
-            if (!empty($username)) {
-                $setClauses[] = "username = '$username'";
-            }
-            if (!empty($image)) {
-                $setClauses[] = "userImg = '$image'";
-            }
-
-            if (!empty($email)) {
-                $setClauses[] = "email = '$email'";
-            }
-
-            if (!empty($mobile)) {
-                $setClauses[] = "mobile = '$mobile'";
-            }
-            if (!empty($dob)) {
-                $setClauses[] = "dob = '$dob'";
-            }
-            if (!empty($role)) {
-                $setClauses[] = "roleId = '$role'";
-            }
-        
-            $setClauses[] = "updated_at = NOW()";
-
-            $update_profile_query .= implode(", ", $setClauses);
-            $update_profile_query .= " WHERE id = $userId";
-
-            mysqli_query($con, $update_profile_query);
-
-            $response = array(
-                'success' => 'Profile updated successfully.'
-            );
-            echo json_encode($response);
-        } else {
-            $response = array(
-                'error' => 'Please use the POST method.'
-            );
-            echo json_encode($response);
-        }
-
-        mysqli_close($con);
-    }
-
-    public function getUser($id) {
-           /*
-           purpose: to allow admin to show details of one user
-           method: POST
-        for testing:
-            {
-    "action": "getUser",
-    "id": {insert id#},
-}
-            }
-        */
-        global $con;
+    class UserOperations {
     
-        if (!empty($id)) {
-            $sql = "SELECT id, username, email, mobile, dob, userImg, created_at, updated_at FROM users WHERE id = $id";
-            $result = $con->query($sql);
-    
-            if ($result->num_rows > 0) {
-                $user = $result->fetch_assoc();
-                echo json_encode($user);
-            } else {
-                echo json_encode(array("error" => "User not found."));
-            }
-        } else {
-            echo json_encode(array("error" => "No user ID provided."));
-        }
-    
-        $con->close();
+        // API Testing: http://localhost\masterpiece\API\admin\userCRUD.php
+        public function create() {
+            /*
+            purpose: to create a new user from admin
+            method: POST
+            for testing:
+                {
+        "userImg": "{insert text}",
+        "username": "{insert text}",
+        "email": "{insert text}",
+        "roleId": "{insert text}",
+        "mobile": "{insert text}",
+        "dob": "{insert text}"
     }
-        public function getAll() {
-               /*
-               purpose: to allow admin to show details of all users
-           method: POST
-        for testing:
-            {
-    "action": "getAll",
-}
-            }
-        */
+                }
+            */
             global $con;
-            $sql = "SELECT id, username, email, mobile, dob, userImg, created_at, updated_at FROM users";
-            $result = $con->query($sql);
     
-            if ($result->num_rows > 0) {
-                $users = array();
-                while ($row = $result->fetch_assoc()) {
-                    $users[] = $row;
+            $data = json_decode(file_get_contents('php://input'), true);
+    
+            if (!empty($data)) {
+                $requiredFields = [ 'email', 'username', 'mobile', 'dob','roleId'];
+                $allFieldsPresent = true;
+    
+                foreach ($requiredFields as $field) {
+                    if (!isset($data[$field]) || empty($data[$field])) {
+                        $allFieldsPresent = false;
+                        break;
+                    }
                 }
-                echo json_encode($users);
+    
+                if ($allFieldsPresent) {
+                    $image = ('API/images/default.jpg');
+                    $username = $data['username'];
+                    $email = $data['email'];
+                    $mobile = $data['mobile'];
+                    $role = $data['roleId'];
+                    $dob = $data['dob'];
+                    $hashedpassword = password_hash("venus@123",PASSWORD_DEFAULT);
+                    $sql = "INSERT INTO users (userImg, username, password, roleId, mobile, email, created_at, updated_at, dob) VALUES (
+                        '$image', 
+                        '$username',
+                        '$hashedpassword',
+                        '$role',
+                        '$mobile',
+                        '$email',
+                        NOW(),
+                        NOW(),
+                        '$dob'
+                    )";
+    
+                    if ($con->query($sql) === TRUE) {
+                        echo json_encode(array("message" => "User record created successfully."));
+                    } else {
+                        echo json_encode(array("error" => "Error: " . $con->error));
+                    }
+                } else {
+                    echo json_encode(array("error" => "Please provide all required fields."));
+                }
             } else {
-                echo json_encode(array("error" => "No users found."));
+                echo json_encode(array("error" => "No data received."));
             }
     
             $con->close();
         }
-
     
-    public function searchUsers($searchTerm) {
-        /*
-        purpose: to search for users by userId, name, mobile, email, or dob
-        method: POST
-        for testing:
-            {
-                "action": "searchUsers",
-                "searchTerm": "{insert search term}"
-            }
-        */
-        global $con;
-    
-        if (!empty($searchTerm)) {
-            $sql = "SELECT id, username, email, mobile, dob, userImg, created_at, updated_at FROM users WHERE 
-                    id LIKE '%$searchTerm%' OR
-                    username LIKE '%$searchTerm%' OR
-                    mobile LIKE '%$searchTerm%' OR
-                    email LIKE '%$searchTerm%' OR
-                    dob LIKE '%$searchTerm%'";
-            $result = $con->query($sql);
-    
-            if ($result->num_rows > 0) {
-                $users = array();
-                while ($row = $result->fetch_assoc()) {
-                    $users[] = $row;
+        public function delete() {
+                  /*
+                  purpose: to delete a user from admin
+                  mehtod: POST
+            for testing:
+                {
+        "id": {insert id#},
+    }
                 }
-                echo json_encode($users);
+            */
+            global $con;
+    
+            if ($_SERVER['REQUEST_METHOD'] === "DELETE") {
+                $data = json_decode(file_get_contents('php://input'), true);
+                $id = $data['id'];
+    
+                if (!empty($id)) {
+                    $sql = "DELETE FROM users WHERE id = $id";
+    
+                    if ($con->query($sql) === TRUE) {
+                        echo json_encode(array("message" => "User record deleted successfully."));
+                    } else {
+                        echo json_encode(array("error" => "Error: " . $con->error));
+                    }
+                } else {
+                    echo json_encode(array("message" => "No ID provided for deletion."));
+                }
             } else {
-                echo json_encode(array("error" => "No users found."));
+                echo json_encode(array("error" => "Invalid request method. Please use delete method."));
             }
-        } else {
-            echo json_encode(array("error" => "Please provide a search term."));
+    
+            $con->close();
         }
     
-        $con->close();
+        public function edit() {
+            
+            global $con;
+              /*
+              purpose: to edit a user from admin
+              method: PUT
+            for testing:
+                {
+        "id": {insert id#},
+        "userImg": "{insert text}",
+        "username": "{insert text}",
+        "email": "{insert text}",
+        "role": "{insert text}",
+        "mobile": "{insert text}",
+        "dob": "{insert text}"
+    }
+                }
+            */
+    
+            if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+                $json_data = file_get_contents('php://input');
+                $data = json_decode($json_data, true);
+    
+                $userId = $data['id'];
+    
+                $image = $data['image'] ?? '';
+                $username = $data['username'] ?? '';
+                $email = $data['email'] ?? '';
+                $dob = $data['dob'] ?? '';
+                $role = $data['role'] ?? '';
+                $mobile = $data['mobile'] ?? '';
+              
+    
+                $update_profile_query = "UPDATE users SET ";
+                $setClauses = [];
+    
+                if (!empty($username)) {
+                    $setClauses[] = "username = '$username'";
+                }
+                if (!empty($image)) {
+                    $setClauses[] = "userImg = '$image'";
+                }
+    
+                if (!empty($email)) {
+                    $setClauses[] = "email = '$email'";
+                }
+    
+                if (!empty($mobile)) {
+                    $setClauses[] = "mobile = '$mobile'";
+                }
+                if (!empty($dob)) {
+                    $setClauses[] = "dob = '$dob'";
+                }
+                if (!empty($role)) {
+                    $setClauses[] = "roleId = '$role'";
+                }
+            
+                $setClauses[] = "updated_at = NOW()";
+    
+                $update_profile_query .= implode(", ", $setClauses);
+                $update_profile_query .= " WHERE id = $userId";
+    
+                mysqli_query($con, $update_profile_query);
+    
+                $response = array(
+                    'success' => 'Profile updated successfully.'
+                );
+                echo json_encode($response);
+            } else {
+                $response = array(
+                    'error' => 'Please use the POST method.'
+                );
+                echo json_encode($response);
+            }
+    
+            mysqli_close($con);
+        }
+    
+        public function getUser($id) {
+               /*
+               purpose: to allow admin to show details of one user
+               method: GET
+            for testing:
+                {
+    =    "id": {insert id#},
+    }
+                }
+            */
+            global $con;
+        
+            if (!empty($id)) {
+                $sql = "SELECT id, username, email, mobile, dob, userImg, created_at, updated_at FROM users WHERE id = $id";
+                $result = $con->query($sql);
+        
+                if ($result->num_rows > 0) {
+                    $user = $result->fetch_assoc();
+                    echo json_encode($user);
+                } else {
+                    echo json_encode(array("error" => "User not found."));
+                }
+            } else {
+                echo json_encode(array("error" => "No user ID provided."));
+            }
+        
+            $con->close();
+        }
+            public function getAll() {
+                   /*
+                   purpose: to allow admin to show details of all users
+               method: GET
+            for testing:
+                {
+        "action": "getAll",
+    }
+                }
+            */
+                global $con;
+                $sql = "SELECT id, username, email, mobile, dob, roleId, userImg, created_at, updated_at FROM users";
+                $result = $con->query($sql);
+        
+                if ($result->num_rows > 0) {
+                    $users = array();
+                    while ($row = $result->fetch_assoc()) {
+                        $users[] = $row;
+                    }
+                    echo json_encode($users);
+                } else {
+                    echo json_encode(array("error" => "No users found."));
+                }
+        
+                $con->close();
+            }
+    
+        
+       
+        public function processRequest()
+        {
+            $requestMethod = $_SERVER['REQUEST_METHOD'];
+        
+            if ($requestMethod === 'POST') {
+                $this->create();
+            } elseif ($requestMethod === 'DELETE') {
+                $this->delete();
+            } elseif ($requestMethod === 'PUT') {
+                $this->edit();
+            } elseif ($requestMethod === 'GET') {
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (isset($data['id'])) {
+                    $this->getUser($data['id']);
+                } else {
+                    $this->getAll();
+                }
+            } else {
+                echo json_encode(array("error" => "Invalid request method."));
+            }
     }
 }
 
-    $userOps = new UserOperations();
-    
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $data = json_decode(file_get_contents('php://input'), true);
-    
-        if (isset($data['action'])) {
-            $action = $data['action'];
-            switch ($action) {
-                case 'create':
-                    $userOps->create();
-                    break;
-                case 'delete':
-                    $userOps->delete();
-                    break;
-                case 'edit':
-                    $userOps->edit();
-                    break;
-                case 'getUser':
-                    if (isset($data['id'])) {
-                        $userOps->getUser($data['id']);
-                    } else {
-                        echo json_encode(array("error" => "No user ID provided."));
-                    }
-                    break;
-                case 'getAll': 
-                    $userOps->getAll();
-                    break;
-                case 'searchUsers':
-                    if (isset($data['searchTerm'])) {
-                        $userOps->searchUsers($data['searchTerm']);
-                    } else {
-                        echo json_encode(array("error" => "No search term provided."));
-                    }
-                    break;
-                default:
-                    echo json_encode(array("error" => "Invalid action."));
-                }
-            }
-        }  
+$userOps = new UserOperations();
+$userOps->processRequest();
 ?>

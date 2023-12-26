@@ -15,7 +15,6 @@ class CartOperations {
             purpose: to allow a user to add items to cart
             method: POST
         {
-            "action": "addItem",
             "productId": {insert id#},
             "quantity": {insert #}
         }
@@ -65,7 +64,7 @@ class CartOperations {
     public function updateItem() {
         /*
         purpose: to update an item from the cart
-        method: POST
+        method: PUT
         for testing:
         {
             "action": "updateItem",
@@ -105,7 +104,7 @@ class CartOperations {
     public function removeItem() {
         /*
         purpose: remove item from cart
-        method: POST
+        method: DELETE
         for testing:
         {
             "action": "removeItem",
@@ -143,15 +142,9 @@ class CartOperations {
     public function getCart() {
         /*
         purpose: to retrieve a persons cart
-        method: POST
+        method: GET
         for testing:
         {
-
-    public function getCart($userId) {
-        /*
-        for testing:
-        {
-            "action": "getCart"
         }
         */
         global $con;
@@ -193,7 +186,7 @@ class CartOperations {
         /*
         for testing:
             purpose: to clear all items from cart
-            method: POST
+            method: DELETE
         {
             "action": "clearCart"
         }

@@ -8,27 +8,43 @@ include '../connection.php';
 
 class Reviews {
 
-    // API Testing: http://localhost\masterpiece\API\cart\cartCRUD.php
+    // API Testing: http://localhost\masterpiece\API\reviews\reviewsCRUD.php
     public function createReviews() {
+        /*
+        purpose: Create a review
+        method: POST
+        for testing:
+        {
+            "userId":,
+            "productId": ,
+            "rating": ,
+            "comment": ""
+        }
+        */
         global $con;
-
+    
         $data = json_decode(file_get_contents('php://input'), true);
-
+    
         session_start();
         if (!isset($_SESSION['id'])) {
             echo json_encode(array("error" => "Please login to continue."));
             return;
         }
-
+    
         $userId = $_SESSION['id'];
         $productId = $data['productId'] ?? '';
         $rating = $data['rating'];
         $comment = $data['comment'];
-
+    
+        if (!is_numeric($rating) || floor($rating) != $rating || $rating < 1 || $rating > 5) {
+            echo json_encode(array("error" => "Rating must be a whole number between 1 and 5."));
+            return;
+        }
+    
         if (!empty($userId) && !empty($productId) && !empty($rating) && !empty($comment)) {
             $insertQuery = "INSERT INTO reviews (userId, productId, rating, comment, created_at, updated_at) 
                             VALUES ('$userId', '$productId', '$rating', '$comment', NOW(), NOW())";
-
+    
             if ($con->query($insertQuery) === TRUE) {
                 echo json_encode(array("message" => "Review created successfully."));
             } else {
@@ -37,10 +53,9 @@ class Reviews {
         } else {
             echo json_encode(array("error" => "Please provide the required information."));
         }
-
+    
         $con->close();
     }
-  
     public function editReview() {
         global $con;
 
@@ -58,7 +73,7 @@ class Reviews {
         $comment = $data['comment'];
 
         if (!empty($userId) && !empty($productId) && !empty($rating) && !empty($comment)) {
-            // Update query instead of insert query
+
             $updateQuery = "UPDATE reviews SET rating = '$rating', comment = '$comment', updated_at = NOW() WHERE userId = '$userId' AND productId = '$productId'";
 
             if ($con->query($updateQuery) === TRUE) {
@@ -88,7 +103,6 @@ class Reviews {
         $productId = $data['productId'] ?? '';
 
         if (!empty($userId) && !empty($productId)) {
-            // Delete query instead of insert query
             $deleteQuery = "DELETE FROM reviews WHERE userId = '$userId' AND productId = '$productId'";
 
             if ($con->query($deleteQuery) === TRUE) {
@@ -118,7 +132,6 @@ class Reviews {
         $productId = $data['productId'] ?? '';
 
         if (!empty($userId) && !empty($productId)) {
-            // Fetch query instead of insert query
             $selectQuery = "SELECT * FROM reviews WHERE userId = '$userId' AND productId = '$productId'";
 
             $result = $con->query($selectQuery);
@@ -141,7 +154,6 @@ class Reviews {
 
 $reviews = new Reviews();
 
-// Check the HTTP request method and call the appropriate function
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $reviews->createReviews();
 } elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {

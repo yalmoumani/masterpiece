@@ -40,7 +40,6 @@ class userSettings {
         $mobile = $requestData['mobile'];
         $userImg = $requestData['userImg'];
         
-        // Logic to edit user profile based on the provided data
         $query = "UPDATE users SET name = :name, password = :password, email = :email, mobile = :mobile, userImg = :userImg WHERE id = :id";
         $stmt = $this->con->prepare($query);
         $stmt->bindParam(':name', $name);
